@@ -66,7 +66,10 @@ def geocode_address(address, retries=3, timeout=5):
     return None, None
 
 # Update the database with the data from the file
+import mysql.connector
+
 def update_database(data):
+    last_column_index = 17  # Replace this with the correct index for the last column in your data
     for row in data:
         # Geocode the address
         lat, lng = geocode_address(", ".join(row[8:12]))
@@ -92,7 +95,7 @@ def update_database(data):
                 LNG=?,
                 BUSINESS_PHONE=?,
                 VOICE_PHONE=?
-            """, (*row, lat, lng, *row[0:17], row[17]))
+            """, (*row, lat, lng, *row[0:17], row[last_column_index]))
 
             # Commit the changes
             mariadb_connection.commit()
@@ -100,9 +103,10 @@ def update_database(data):
             # Print the successful entry
             print(f"Successfully added entry with LIC_SEQN: {row[5]}")
 
-        except mariadb.Error as e:
+        except mysql.connector.Error as e:
             print(f"Error: {e}")
             mariadb_connection.rollback()
+
 
 # Call this function every month to update the database
 def update_monthly():
