@@ -17,12 +17,10 @@ def update_database(data):
             print(f"Skipping entry due to incorrect number of columns: {row}")
             continue
 
-        # Add a None value for latitude and longitude columns
-        row.extend([None, None])
-
         try:
             cursor.execute("""
-                INSERT INTO store_data VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO store_data (LIC_NUM, LIC_NAME, LIC_ISSU_DATE, LIC_EXP_DATE, MAIL_LINE1, MAIL_LINE2, MAIL_CITY, MAIL_STATE, MAIL_ZIP, PREMISE_NAME, PREMISE_STREET, PREMISE_CITY, PREMISE_STATE, PREMISE_ZIP, PREMISE_PHONE)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
                 LIC_NAME=%s,
                 LIC_ISSU_DATE=%s,
@@ -37,15 +35,14 @@ def update_database(data):
                 PREMISE_CITY=%s,
                 PREMISE_STATE=%s,
                 PREMISE_ZIP=%s,
-                PREMISE_PHONE=%s,
-                LATITUDE=%s,
-                LONGITUDE=%s
-                """, row + row[:19])
+                PREMISE_PHONE=%s
+                """, row + row[:15])
             print(f"Updated entry for {row[1]}")
         except mysql.connector.Error as e:
             print(f"Error updating entry for {row[1]}: {e}")
 
         db.commit()
+
 
 
 def read_data_from_file(filename):
