@@ -61,6 +61,8 @@ def read_data_from_file(filename):
 # Replace 'data.txt' with the actual file name containing the data
 data = read_data_from_file('monthly_data.txt')
 
+def update_monthly():
+    update_database(data)
 
 if __name__ == "__main__":
     update_monthly()
