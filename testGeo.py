@@ -12,7 +12,7 @@ def geocode_address(address):
         return (None, None)
 
 if __name__ == "__main__":
-    test_address = "4 CALLE COLON, AGUADA, PR, 00602"
+    test_address = "CARR 411 KM 1.0 BO GUAYABO SECTOR BAJURA, AGUADA, PR, 00602"
     lat, lng = geocode_address(test_address)
     print(f"Latitude: {lat}, Longitude: {lng}")
 
