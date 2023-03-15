@@ -82,7 +82,8 @@ def update_database(data):
                 PREMISE_STREET=?, PREMISE_CITY=?, PREMISE_STATE=?, PREMISE_ZIP_CODE=?, MAIL_STREET=?, MAIL_CITY=?,
                 MAIL_STATE=?, MAIL_ZIP_CODE=?, VOICE_PHONE=?, LATITUDE=?, LONGITUDE=?
                 WHERE LIC_SEQN=?
-            """, row + list(geocode_address(", ".join(row[8:12]))))
+            """, [*row, *geocode_address(", ".join(row[8:12]))])
+
 
             print(f"Updated entry with LIC_SEQN {row[5]}")
         else:
