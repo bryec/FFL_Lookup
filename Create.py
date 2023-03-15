@@ -12,7 +12,10 @@ cursor = db.cursor()
 
 def update_database(data):
     for row in data:
-        num_columns = len(row)
+        # Make sure the row has exactly 17 columns
+        if len(row) != 17:
+            print(f"Skipping entry due to incorrect number of columns: {row}")
+            continue
 
         # Add a None value for latitude and longitude columns
         row.extend([None, None])
