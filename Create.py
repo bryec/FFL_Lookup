@@ -93,7 +93,7 @@ def update_database(data):
                 PREMISE_STREET, PREMISE_CITY, PREMISE_STATE, PREMISE_ZIP_CODE, MAIL_STREET, MAIL_CITY,
                 MAIL_STATE, MAIL_ZIP_CODE, VOICE_PHONE, LATITUDE, LONGITUDE
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, row + geocode_address(", ".join(row[8:12])))
+            """, (*row, *geocode_address(", ".join(row[8:12]))))
             print(f"Added new entry with LIC_SEQN {row[5]}")
 
     # Remove entries that don't exist in the new data
