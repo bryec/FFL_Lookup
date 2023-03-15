@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderTimedOut
+import time
 
 # Connect to the database (or create it if it doesn't exist)
 conn = sqlite3.connect("address_database.db")
@@ -42,14 +43,21 @@ def read_file(file_path):
     return data
 
 # Get geolocation data for an address
-def geocode_address(address):
+def geocode_address(address, retries=3, timeout=5):
     geolocator = Nominatim(user_agent="geoapiExercises")
-    try:
-        location = geolocator.geocode(address)
-        if location:
-            return location.latitude, location.longitude
-    except GeocoderTimedOut:
-        return geocode_address(address)
+
+    for attempt in range(retries):
+        try:
+            location = geolocator.geocode(address, timeout=timeout)
+            if location:
+                return location.latitude, location.longitude
+        except (GeocoderTimedOut, GeocoderUnavailable):
+            if attempt < retries - 1:
+                time.sleep(2 ** attempt)  # Exponential backoff
+                continue
+            else:
+                raise
+
     return None, None
 
 # Update the database with the data from the file
