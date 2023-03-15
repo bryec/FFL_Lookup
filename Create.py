@@ -40,12 +40,13 @@ def update_database(data):
                 PREMISE_PHONE=%s,
                 LATITUDE=%s,
                 LONGITUDE=%s
-                """, row * 2)
+                """, row + row[:19])
             print(f"Updated entry for {row[1]}")
         except mysql.connector.Error as e:
             print(f"Error updating entry for {row[1]}: {e}")
 
         db.commit()
+
 
 def read_data_from_file(filename):
     data = []
