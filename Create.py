@@ -47,11 +47,20 @@ def update_database(data):
 
         db.commit()
 
-def update_monthly():
-    with open('monthly_data.txt', 'r') as file:
-        reader = csv.reader(file, delimiter=',')
-        data = [row for row in reader]
-        update_database(data)
+def read_data_from_file(filename):
+    data = []
+    with open(filename, 'r') as f:
+        reader = csv.reader(f, delimiter='\t', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        next(reader)  # skip header row
+        for row in reader:
+            while len(row) < 17:  # Fill missing columns with empty strings
+                row.append('')
+            data.append(row)
+    return data
+
+# Replace 'data.txt' with the actual file name containing the data
+data = read_data_from_file('monthly_data.txt')
+
 
 if __name__ == "__main__":
     update_monthly()
