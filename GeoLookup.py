@@ -3,7 +3,7 @@ from geopy.geocoders import Nominatim
 from geopy.exc import GeocoderUnavailable
 
 # Geocoder setup
-geolocator = Nominatim(user_agent="your_user_agent")
+geolocator = Nominatim(user_agent="my_ffl_lookup")
 
 # Database connection
 db = mysql.connector.connect(
@@ -26,7 +26,7 @@ def update_geocode_data():
     rows = cursor.fetchall()
 
     for row in rows:
-        lat, lng = geocode_address(", ".join(row[8:12]))
+        lat, lng = geocode_address(f"{row[8]}, {row[9]}, {row[10]}, {row[11]}")
 
         if lat and lng:
             cursor.execute("""
