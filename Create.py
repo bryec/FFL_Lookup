@@ -45,7 +45,7 @@ def update_database(data):
         db.commit()
 
 def update_monthly():
-    with open('file.txt', 'r') as file:
+    with open('monthly_data.txt', 'r') as file:
         reader = csv.reader(file, delimiter=',')
         data = [row for row in reader]
         update_database(data)
