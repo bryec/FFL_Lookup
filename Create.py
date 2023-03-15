@@ -38,8 +38,7 @@ def update_database(data):
                 PREMISE_PHONE=%s
                 """, row + row[:15])
             print(f"Updated entry for {row[1]}")
-        except mysql.connector.Error as e:
-            print(f"Error updating entry for {row[1]}: {e}")
+
 
         db.commit()
 
