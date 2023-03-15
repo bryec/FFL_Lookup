@@ -67,41 +67,42 @@ def geocode_address(address, retries=3, timeout=5):
 
 # Update the database with the data from the file
 def update_database(data):
-    cursor = conn.cursor()
     for row in data:
-        # Check if the entry exists
-        cursor.execute("SELECT * FROM store_data WHERE LIC_SEQN=%s", (row[5],))
+        # Geocode the address
+        lat, lng = geocode_address(", ".join(row[8:12]))
 
-        entry = cursor.fetchone()
-
-        if entry:
-            # If the entry exists, update it
+        try:
             cursor.execute("""
-                UPDATE store_data SET
-                LIC_REGN=?, LIC_DIST=?, LIC_CNTY=?, LIC_TYPE=?, LIC_XPRDTE=?, LICENSE_NAME=?, BUSINESS_NAME=?,
-                PREMISE_STREET=?, PREMISE_CITY=?, PREMISE_STATE=?, PREMISE_ZIP_CODE=?, MAIL_STREET=?, MAIL_CITY=?,
-                MAIL_STATE=?, MAIL_ZIP_CODE=?, VOICE_PHONE=?, LATITUDE=?, LONGITUDE=?
-                WHERE LIC_SEQN=?
-            """, (*row, *geocode_address(", ".join(row[8:12]))))
+                INSERT INTO store_data VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                LIC_NAME=?,
+                LIC_ISSU_DATE=?,
+                LIC_EXP_DATE=?,
+                MAIL_LINE1=?,
+                MAIL_LINE2=?,
+                MAIL_CITY=?,
+                MAIL_STATE=?,
+                MAIL_ZIP=?,
+                PREMISE_LINE1=?,
+                PREMISE_LINE2=?,
+                PREMISE_CITY=?,
+                PREMISE_STATE=?,
+                PREMISE_ZIP=?,
+                LAT=?,
+                LNG=?,
+                BUSINESS_PHONE=?,
+                VOICE_PHONE=?
+            """, (*row, lat, lng, *row[0:17], row[17]))
 
-            print(f"Updated entry with LIC_SEQN {row[5]}")
-        else:
-            # If the entry doesn't exist, insert a new record
-            cursor.execute("""
-                INSERT INTO store_data (
-                LIC_REGN, LIC_DIST, LIC_CNTY, LIC_TYPE, LIC_XPRDTE, LIC_SEQN, LICENSE_NAME, BUSINESS_NAME,
-                PREMISE_STREET, PREMISE_CITY, PREMISE_STATE, PREMISE_ZIP_CODE, MAIL_STREET, MAIL_CITY,
-                MAIL_STATE, MAIL_ZIP_CODE, VOICE_PHONE, LATITUDE, LONGITUDE
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (*row, *geocode_address(", ".join(row[8:12]))))
-            print(f"Added new entry with LIC_SEQN {row[5]}")
+            # Commit the changes
+            mariadb_connection.commit()
 
-    # Remove entries that don't exist in the new data
-    cursor.execute("DELETE FROM store_data WHERE LIC_SEQN NOT IN ({})".format(",".join(["?"] * len(data))),
-                   [row[5] for row in data])
+            # Print the successful entry
+            print(f"Successfully added entry with LIC_SEQN: {row[5]}")
 
-    # Commit the changes
-    conn.commit()
+        except mariadb.Error as e:
+            print(f"Error: {e}")
+            mariadb_connection.rollback()
 
 # Call this function every month to update the database
 def update_monthly():
