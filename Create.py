@@ -2,7 +2,7 @@ import mysql.connector
 import csv
 
 # Connect to the database (or create it if it doesn't exist)
-conn = mysql.connector.connect(
+db = mysql.connector.connect(
     host="localhost",
     user="ffl",
     password="ffladdresslookup",
