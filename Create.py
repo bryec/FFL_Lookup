@@ -1,4 +1,4 @@
-import sqlite3
+import mysql.connector
 import os
 from datetime import datetime
 from geopy.geocoders import Nominatim
@@ -6,33 +6,38 @@ from geopy.exc import GeocoderTimedOut
 import time
 
 # Connect to the database (or create it if it doesn't exist)
-conn = sqlite3.connect("address_database.db")
+conn = mysql.connector.connect(
+    host="localhost",
+    user="ffl",
+    password="ffladdresslookup",
+    database="FFL_Address"
+)
 cursor = conn.cursor()
 
 # Create the table if it doesn't exist
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS stores (
-    LIC_REGN INTEGER,
-    LIC_DIST INTEGER,
-    LIC_CNTY INTEGER,
-    LIC_TYPE TEXT,
-    LIC_XPRDTE TEXT,
-    LIC_SEQN INTEGER,
-    LICENSE_NAME TEXT,
-    BUSINESS_NAME TEXT,
-    PREMISE_STREET TEXT,
-    PREMISE_CITY TEXT,
-    PREMISE_STATE TEXT,
-    PREMISE_ZIP_CODE TEXT,
-    MAIL_STREET TEXT,
-    MAIL_CITY TEXT,
-    MAIL_STATE TEXT,
-    MAIL_ZIP_CODE TEXT,
-    VOICE_PHONE TEXT,
-    LATITUDE REAL,
-    LONGITUDE REAL,
-    PRIMARY KEY (LIC_REGN, LIC_SEQN)
+CREATE TABLE IF NOT EXISTS store_data (
+    LIC_REGN VARCHAR(255),
+    LIC_DIST VARCHAR(255),
+    LIC_CNTY VARCHAR(255),
+    LIC_TYPE VARCHAR(255),
+    LIC_XPRDTE VARCHAR(255),
+    LIC_SEQN VARCHAR(255) PRIMARY KEY,
+    LICENSE_NAME VARCHAR(255),
+    BUSINESS_NAME VARCHAR(255),
+    PREMISE_STREET VARCHAR(255),
+    PREMISE_CITY VARCHAR(255),
+    PREMISE_STATE VARCHAR(255),
+    PREMISE_ZIP_CODE VARCHAR(255),
+    MAIL_STREET VARCHAR(255),
+    MAIL_CITY VARCHAR(255),
+    MAIL_STATE VARCHAR(255),
+    MAIL_ZIP_CODE VARCHAR(255),
+    VOICE_PHONE VARCHAR(255),
+    LATITUDE DOUBLE,
+    LONGITUDE DOUBLE
 )
+
 """)
 
 # Read the provided text file
@@ -62,26 +67,38 @@ def geocode_address(address, retries=3, timeout=5):
 
 # Update the database with the data from the file
 def update_database(data):
+    cursor = conn.cursor()
     for row in data:
-        # Check if the entry already exists
-        cursor.execute("SELECT * FROM stores WHERE LIC_REGN=? AND LIC_SEQN=?", (row[0], row[5]))
-        existing_entry = cursor.fetchone()
+        # Check if the entry exists
+        cursor.execute("SELECT * FROM store_data WHERE LIC_SEQN=?", (row[5],))
+        entry = cursor.fetchone()
 
-        # Perform geolocation lookup only if the entry is new or has a different address
-        if not existing_entry or existing_entry[8:12] != tuple(row[8:12]):
-            lat, lng = geocode_address(", ".join(row[8:12]))
+        if entry:
+            # If the entry exists, update it
+            cursor.execute("""
+                UPDATE store_data SET
+                LIC_REGN=?, LIC_DIST=?, LIC_CNTY=?, LIC_TYPE=?, LIC_XPRDTE=?, LICENSE_NAME=?, BUSINESS_NAME=?,
+                PREMISE_STREET=?, PREMISE_CITY=?, PREMISE_STATE=?, PREMISE_ZIP_CODE=?, MAIL_STREET=?, MAIL_CITY=?,
+                MAIL_STATE=?, MAIL_ZIP_CODE=?, VOICE_PHONE=?, LATITUDE=?, LONGITUDE=?
+                WHERE LIC_SEQN=?
+            """, row + geocode_address(", ".join(row[8:12])) + (row[5],))
+            print(f"Updated entry with LIC_SEQN {row[5]}")
         else:
-            lat, lng = existing_entry[-2], existing_entry[-1]
+            # If the entry doesn't exist, insert a new record
+            cursor.execute("""
+                INSERT INTO store_data (
+                LIC_REGN, LIC_DIST, LIC_CNTY, LIC_TYPE, LIC_XPRDTE, LIC_SEQN, LICENSE_NAME, BUSINESS_NAME,
+                PREMISE_STREET, PREMISE_CITY, PREMISE_STATE, PREMISE_ZIP_CODE, MAIL_STREET, MAIL_CITY,
+                MAIL_STATE, MAIL_ZIP_CODE, VOICE_PHONE, LATITUDE, LONGITUDE
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, row + geocode_address(", ".join(row[8:12])))
+            print(f"Added new entry with LIC_SEQN {row[5]}")
 
-        # Update or insert the entry
-        cursor.execute("""
-        INSERT OR REPLACE INTO stores (
-            LIC_REGN, LIC_DIST, LIC_CNTY, LIC_TYPE, LIC_XPRDTE, LIC_SEQN, LICENSE_NAME, BUSINESS_NAME,
-            PREMISE_STREET, PREMISE_CITY, PREMISE_STATE, PREMISE_ZIP_CODE,
-            MAIL_STREET, MAIL_CITY, MAIL_STATE, MAIL_ZIP_CODE, VOICE_PHONE, LATITUDE, LONGITUDE
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, row + [lat, lng])
+    # Remove entries that don't exist in the new data
+    cursor.execute("DELETE FROM store_data WHERE LIC_SEQN NOT IN ({})".format(",".join(["?"] * len(data))),
+                   [row[5] for row in data])
 
+    # Commit the changes
     conn.commit()
 
 # Call this function every month to update the database
