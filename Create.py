@@ -70,7 +70,8 @@ def update_database(data):
     cursor = conn.cursor()
     for row in data:
         # Check if the entry exists
-        cursor.execute("SELECT * FROM store_data WHERE LIC_SEQN=?", (row[5],))
+        cursor.execute("SELECT * FROM store_data WHERE LIC_SEQN=%s", (row[5],))
+
         entry = cursor.fetchone()
 
         if entry:
