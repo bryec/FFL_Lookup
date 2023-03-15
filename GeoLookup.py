@@ -26,7 +26,8 @@ def update_geocode_data():
     rows = cursor.fetchall()
 
     for row in rows:
-        lat, lng = geocode_address(f"{row[8]}, {row[9]}, {row[10]}, {row[11]}")
+        address = f"{row[8]}, {row[9]}, {row[10]}, {row[11]}"
+        lat, lng = geocode_address(address)
 
         if lat and lng:
             cursor.execute("""
@@ -36,9 +37,10 @@ def update_geocode_data():
                 """, (lat, lng, row[0]))
 
             db.commit()
-            print(f"Updated geolocation for {row[1]}")
+            print(f"Updated geolocation for {row[1]} (Address: {address}, Latitude: {lat}, Longitude: {lng})")
         else:
-            print(f"Failed to geocode {row[1]}")
+            print(f"Failed to geocode {row[1]} (Address: {address})")
+
 
 if __name__ == "__main__":
     update_geocode_data()
